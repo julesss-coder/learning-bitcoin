@@ -1,6 +1,7 @@
 from ecpy.curves import Curve
 from ecpy.keys import ECPrivateKey
 from cmath import sqrt
+import hashlib
 
 class KeyPair:
     def __init__(self):
@@ -63,15 +64,33 @@ class KeyPair:
 
         return {'x': x, 'y': y}
     
+
+    def generate_public_key_hash(self):
+        # sha-256
+        # input for sha-256 is public key (compressed?)
+        # output is called digest
+        hash = hashlib.sha256()
+        hash.update(self.compressed_public_key.encode('utf-8'))
+        digest = hash.digest()
+        hexdigest = hash.hexdigest()
+        print("sha-256 digest: ", digest)
+        #TODO
+        # ripemd60
+        # return address
     
 
     def generate_address(self):
         pass
 
 
+
 key_pair = KeyPair()
-key_pair.generate_key_pair()
 print(key_pair)
+print(key_pair.generate_public_key_hash())
+
+
+class Transaction:
+    pass
 
 
 #  private key
