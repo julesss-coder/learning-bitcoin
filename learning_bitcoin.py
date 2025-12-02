@@ -8,9 +8,10 @@ class KeyPair:
     def __init__(self):
         self.private_key:int = self.generate_private_key() #TODO Make inaccessible
         self.public_key_coordinates:dict[str, int] = self.generate_public_key_coordinates()
-        self.uncompressed_public_key:bytes = self.generate_uncompressed_public_key()
+        self.uncompressed_public_key:str = self.generate_uncompressed_public_key()
         self.compressed_public_key:str = self.generate_compressed_public_key()
-        self.public_key_hash:str = self.generate_public_key_hash()
+        self.public_key_hash_from_compressed_public_key:str = self.generate_public_key_hash(self.compressed_public_key)
+        self.public_key_hash_from_uncompressed_public_key:str = self.generate_public_key_hash(self.uncompressed_public_key)
 
     def generate_private_key(self)->int:
         # get reliable source of randomness from Linux
@@ -52,14 +53,15 @@ class KeyPair:
         x_bytes = self.public_key_coordinates['x'].to_bytes(32, "big")
         y_bytes = self.public_key_coordinates['y'].to_bytes(32, "big")
         uncompressed_public_key = b"\x04" + x_bytes + y_bytes
-        return uncompressed_public_key
+        return uncompressed_public_key.hex()
     
 
     def generate_compressed_public_key(self)->str:
         """
         Generates compressed public key.
         """
-        return '02' + hex(self.public_key_coordinates['x']) if self.public_key_coordinates['y'] % 2 == 0 else '03' + hex(self.public_key_coordinates['x'])
+        prefix = '02' if self.public_key_coordinates['y'] % 2 == 0 else '03' 
+        return prefix + self.public_key_coordinates['x'].to_bytes(32, 'big').hex()
     
 
     def decompress_public_key(self)->dict[str, int]:
@@ -87,11 +89,11 @@ class KeyPair:
         return {'x': int(x, 16), 'y': int(y, 16)}
     
 
-    def generate_public_key_hash(self)->str:
+    def generate_public_key_hash(self, key)->str:
         # sha-256
         # input for sha-256 is public key (compressed?)
         sha256_hash = hashlib.sha256()
-        sha256_hash.update(self.compressed_public_key.encode('utf-8')) #encode argument to bytes-like object first
+        sha256_hash.update(bytes.fromhex(key)) #encode argument to bytes-like object first
         sha256_digest = sha256_hash.digest()
         
         # ripemd60
@@ -106,9 +108,12 @@ class KeyPair:
 
 
 key_pair = KeyPair()
-print(key_pair)
-print("key_pair.public_key_coordinates: ", key_pair.public_key_coordinates)
-print("decompressed public key", key_pair.decompress_public_key())
+key_pair.generate_public_key_hash('046b7121960f910fd5947123710bb667ccc5edaadaecc5c377f7fcc41f97c79a8dc18fa30f0b5654846aed34803dcf07e41f76006053b5af33eabbfa2fba8de8e4')
+print(f"key_pair.compressed_public_key: {key_pair.compressed_public_key}")
+print(f"key_pair.public_key_hash_from_compressed_public_key: {key_pair.public_key_hash_from_compressed_public_key}")
+print(f"key_pair.uncompressed_public_key: {key_pair.uncompressed_public_key}")
+print(f"key_pair.public_key_hash_from_uncompressed_public_key: {key_pair.public_key_hash_from_uncompressed_public_key}")
+
 
 
 class Transaction:
